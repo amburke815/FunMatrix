@@ -211,7 +211,11 @@ public class AMatrix<X> implements IMatrix<X> {
                                              BiFunction<Z, Z, α> intraMatrixOperation, IMatrix<Y> combineWith,
                                              α αIdentity) {
 
-
+    for (int i = 0; i < rows; i++) {
+      for (int j = 0; j < cols; j++) {
+        
+      }
+    }
 
     return null;
   }
@@ -325,11 +329,4 @@ public class AMatrix<X> implements IMatrix<X> {
     }
 
     if (!_allRowsSameSize) {
-      throw new IllegalArgumentException("All rows must be of the same length when constructing an AMatrix from a " +
-          "2D List");
-    }
-
-    return toCheck;
-  }
-
-}
+      throw new IllegalArgumentException("All rows must be of the same length wh
