@@ -1,14 +1,9 @@
-import jdk.jshell.execution.Util;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-public class AMatrix<X> implements IMatrix<X> {
+public class FunMatrix<X> implements IMatrix<X> {
 
   //!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~fields~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!
   protected final int rows;
@@ -16,25 +11,26 @@ public class AMatrix<X> implements IMatrix<X> {
   protected final List<List<X>> entries;
 
   //!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ctors~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!
-  AMatrix() {
+  FunMatrix() {
     rows = 0;
     cols = 0;
     entries = new ArrayList<>();
   }
 
-  AMatrix(List<List<X>> elements) {
+  FunMatrix(List<List<X>> elements) {
     Utils.notNull(allRowsSameSize(elements));
     if (elements.size() == 0) {
-      entries = elements;
+      entries = Utils.notNull(elements);
       rows = 0;
       cols = 0;
       return;
     }
     rows = Utils.intBetween(0, elements.size(), Integer.MAX_VALUE);
     cols = Utils.intBetween(0, elements.get(0).size(), Integer.MAX_VALUE);// guaranteed to exist
+    entries = Utils.notNull(elements);
   }
 
-  AMatrix(X uniformEntry, int _rows, int _cols)
+  FunMatrix(X uniformEntry, int _rows, int _cols)
       throws IllegalArgumentException {
     List<List<X>> _entries = new ArrayList<>();
     Utils.intBetween(0, _cols, Integer.MAX_VALUE);
@@ -53,7 +49,7 @@ public class AMatrix<X> implements IMatrix<X> {
     cols = _cols;
   }
 
-  AMatrix(List<X> oneRow, int numRows)
+  FunMatrix(List<X> oneRow, int numRows)
       throws IllegalArgumentException {
     if (Utils.notNull(oneRow).size() == 0) {
       throw new IllegalArgumentException("Cannot make a matrix with copies of an empty row");
@@ -70,7 +66,7 @@ public class AMatrix<X> implements IMatrix<X> {
     cols = oneRow.size();
   }
 
-  AMatrix(BiFunction<Integer, Integer, X> rowColDependentFunction, int _rows, int _cols)
+  FunMatrix(BiFunction<Integer, Integer, X> rowColDependentFunction, int _rows, int _cols)
       throws IllegalArgumentException {
     Utils.notNull(rowColDependentFunction);
     Utils.intBetween(0, _rows, Integer.MAX_VALUE);
@@ -89,7 +85,6 @@ public class AMatrix<X> implements IMatrix<X> {
     rows = _rows;
     cols = _cols;
   }
-
 
 
   //!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~public methods~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!
@@ -114,7 +109,7 @@ public class AMatrix<X> implements IMatrix<X> {
       mapped.add(mappedRow);
     }
 
-    return new AMatrix<Y>(mapped);
+    return new FunMatrix<Y>(mapped);
   }
 
   @Override
@@ -132,7 +127,7 @@ public class AMatrix<X> implements IMatrix<X> {
       mapped.add(mappedRow);
     }
 
-    return new AMatrix<Y>(mapped);
+    return new FunMatrix<Y>(mapped);
   }
 
   @Override
@@ -203,7 +198,7 @@ public class AMatrix<X> implements IMatrix<X> {
       combinedLst.add(thisRow);
     }
 
-    return new AMatrix<>(combinedLst);
+    return new FunMatrix<>(combinedLst);
   }
 
   @Override
@@ -213,7 +208,7 @@ public class AMatrix<X> implements IMatrix<X> {
 
     for (int i = 0; i < rows; i++) {
       for (int j = 0; j < cols; j++) {
-        
+
       }
     }
 
@@ -245,7 +240,7 @@ public class AMatrix<X> implements IMatrix<X> {
     newEntries.get(Utils.intBetween(0, row, rows - 1)).
         set(Utils.intBetween(0, col, cols - 1), Utils.notNull(newEntry));
 
-    return new AMatrix<>(newEntries);
+    return new FunMatrix<>(newEntries);
   }
 
   @Override
@@ -256,7 +251,7 @@ public class AMatrix<X> implements IMatrix<X> {
 
     newEntries.set(Utils.intBetween(0, rowNum, rows - 1), Utils.notNull(newRow));
 
-    return new AMatrix<>(newEntries);
+    return new FunMatrix<>(newEntries);
   }
 
   @Override
@@ -292,7 +287,7 @@ public class AMatrix<X> implements IMatrix<X> {
       subMatrixLst.add(thisRow);
     }
 
-    return new AMatrix<>(subMatrixLst);
+    return new FunMatrix<>(subMatrixLst);
   }
 
   @Override
@@ -315,6 +310,57 @@ public class AMatrix<X> implements IMatrix<X> {
     return rows;
   }
 
+  //!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~overriden from object~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!
+  @Override
+  public boolean equals(Object o) {
+    // fast path
+    if (this == o) {
+      return true;
+    }
+
+    // check instanceof
+    if ( !(o instanceof IMatrix) ) {
+      return false;
+    }
+
+    // safe cast
+    IMatrix anotherMatrix = (IMatrix) o;
+
+    // check sizes
+    if (this.getWidth() != anotherMatrix.getWidth() || this.getHeight() != anotherMatrix.getHeight()) {
+      return false;
+    }
+
+    // intensional equality check
+    return map( (i,j) -> this.getElement(i,j).equals(anotherMatrix.getElement(i,j)))
+        .foldNW( (b1, b2) -> (b1 && b2), true);
+
+  }
+
+  @Override
+  public int hashCode() {
+    return map(elem -> Objects.hashCode(elem)).foldNW((hash1, hash2) -> (hash1 + hash2), 0);
+  }
+
+  @Override
+  public String toString() {
+    return
+        map((i, j) -> {
+          String renderedElem = getElement(i,j).toString();
+          if (j == 0) {
+            return "[" + renderedElem + ", ";
+          }
+          else if (j == getWidth() - 1) {
+            return renderedElem + "]\n";
+          }
+          else {
+            return renderedElem + ", ";
+          }
+        }).foldSE((str1, str2) -> (str1 + str2), "");
+  }
+
+
+
   //!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~private methods~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!
   private final List<List<X>> allRowsSameSize(List<List<X>> toCheck)
       throws IllegalArgumentException {
@@ -329,4 +375,10 @@ public class AMatrix<X> implements IMatrix<X> {
     }
 
     if (!_allRowsSameSize) {
-      throw new IllegalArgumentException("All rows must be of the same length wh
+      throw new IllegalArgumentException("All rows must be of the same length when creating this matrix");
+    }
+    return toCheck;
+  }
+
+
+}
