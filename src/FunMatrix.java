@@ -3,6 +3,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+
+// TODO: make sure that null args are checked everywhere later
 public class FunMatrix<X> implements IMatrix<X> {
 
   //!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~fields~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!
@@ -221,6 +223,11 @@ public class FunMatrix<X> implements IMatrix<X> {
   }
 
   @Override
+  public IMatrix<X> replaceMap(Predicate<X> replaceIf, X replaceWith) {
+    return map(x -> replaceIf.test(x) ? replaceWith : x);
+  }
+
+  @Override
   public List<X> asList() {
     List<X> _asList = new ArrayList<>();
 
@@ -229,6 +236,11 @@ public class FunMatrix<X> implements IMatrix<X> {
     }
 
     return _asList;
+  }
+
+  @Override
+  public IMatrix<X> copy() {
+    return map(x -> x);
   }
 
   @Override
@@ -255,6 +267,16 @@ public class FunMatrix<X> implements IMatrix<X> {
   }
 
   @Override
+  public IMatrix<X> updateCol(List<X> newCol, int colNum) {
+    // is the desired column number valid?
+    Utils.intBetween(0, colNum, getWidth() - 1);
+    // does the specified new column have the right number of entries?
+    Utils.intBetween(getHeight(), newCol.size(), getHeight());
+
+    return map((i, j) -> j == colNum ? newCol.get(i) : getElement(i,j));
+  }
+
+  @Override
   public IMatrix<X> fillWith(X uniformEntry)
       throws IllegalArgumentException {
     Utils.notNull(uniformEntry);
@@ -267,7 +289,17 @@ public class FunMatrix<X> implements IMatrix<X> {
     Utils.notNull(toFind);
     Utils.notNull(replaceWith);
 
-    return map(x -> x.equals(toFind) ? replaceWith : x);
+    return replaceMap(x -> x.equals(toFind), replaceWith);
+  }
+
+  @Override
+  public boolean orMap(Predicate<X> condition) {
+    return map(x -> condition.test(x)).foldNW((b1, b2) -> (b1 || b2), false);
+  }
+
+  @Override
+  public boolean andMap(Predicate<X> condition) {
+    return map(x -> condition.test(x)).foldNW((b1, b2) -> (b1 && b2), true);
   }
 
   @Override
@@ -296,11 +328,6 @@ public class FunMatrix<X> implements IMatrix<X> {
   }
 
   @Override
-  public IMatrix<X> RREF(Comparator<X> comparator) {
-    return null;
-  }
-
-  @Override
   public int getWidth() {
     return cols;
   }
@@ -310,7 +337,6 @@ public class FunMatrix<X> implements IMatrix<X> {
     return rows;
   }
 
-  //!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~overriden from object~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!
   @Override
   public boolean equals(Object o) {
     // fast path
