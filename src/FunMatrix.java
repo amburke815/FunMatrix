@@ -32,6 +32,22 @@ public class FunMatrix<X> implements IMatrix<X> {
     entries = Utils.notNull(elements);
   }
 
+  FunMatrix(List<X>... elements) {
+    Utils.notNull(allRowsSameSize(elements));
+
+    if (elements.length == 0) {
+      entries = new ArrayList<>();
+      rows = 0;
+      cols = 0;
+      return;
+    }
+
+    rows = Utils.intBetween(0, elements.length, Integer.MAX_VALUE);
+    cols = Utils.intBetween(0, elements[0].toArray().length, Integer.MAX_VALUE);// guaranteed to exist
+    entries = new ArrayList<>(Arrays.asList(elements));
+  }
+
+
   FunMatrix(X uniformEntry, int _rows, int _cols)
       throws IllegalArgumentException {
     List<List<X>> _entries = new ArrayList<>();
@@ -396,6 +412,23 @@ public class FunMatrix<X> implements IMatrix<X> {
 
     boolean _allRowsSameSize = true;
     int targSize = toCheck.get(0).size();
+    for (List<X> aRow : toCheck) {
+      _allRowsSameSize &= aRow.size() == targSize;
+    }
+
+    if (!_allRowsSameSize) {
+      throw new IllegalArgumentException("All rows must be of the same length when creating this matrix");
+    }
+    return toCheck;
+  }
+
+  private final List<X>[] allRowsSameSize(List<X>[] toCheck) {
+    if (Utils.notNull(toCheck).length == 0) {
+      return toCheck;
+    }
+
+    boolean _allRowsSameSize = true;
+    int targSize = toCheck[0].size();
     for (List<X> aRow : toCheck) {
       _allRowsSameSize &= aRow.size() == targSize;
     }
